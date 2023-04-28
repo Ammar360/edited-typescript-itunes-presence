@@ -3,6 +3,8 @@ import { iTunes, searchAlbum, TrackInfo } from "./itunes";
 import type { PlayerTrack } from "./player";
 import createHash from "object-hash";
 import { TransformStream } from "node:stream/web";
+import * as nodeID3 from "node-id3";
+
 
 export function formatStr(s: string, minLength = 2, maxLength = 128) {
     return s.length <= maxLength
@@ -44,11 +46,19 @@ export async function createPresence(track: PlayerTrack): Promise<Presence> {
 
     if (meta.artwork) {
         presence.largeImageKey = meta.artwork;
+    } else {
+        /* If album art is not found in Apple Music API, try to get it from MP3 file metadata */
+        const filePath = track.info.path;
+        const tags = nodeID3.read(filePath);
+        if (tags?.image?.data) {
+            const base64Data = Buffer.from(tags.image.data).toString("base64");
+            presence.largeImageKey = "data:image/png;base64," + base64Data;
+        }
     }
 
-    /* return created presence. */
     return presence;
 }
+
 
 export function createTrack(event: iTunes.TickEvent): PlayerTrack {
     return {

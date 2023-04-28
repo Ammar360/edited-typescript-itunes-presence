@@ -52,7 +52,15 @@ export async function createPresence(track: PlayerTrack): Promise<Presence> {
         const tags = nodeID3.read(filePath);
         if (tags?.image?.data) {
             const base64Data = Buffer.from(tags.image.data).toString("base64");
-            presence.largeImageKey = "data:image/png;base64," + base64Data;
+            let imageType = "";
+            if (tags.image.mime === "image/png") {
+                imageType = "png";
+            } else if (tags.image.mime === "image/jpeg" || tags.image.mime === "image/jpg") {
+                imageType = "jpeg";
+            }
+            if (imageType) {
+                presence.largeImageKey = `data:image/${imageType};base64,` + base64Data;
+            }
         }
     }
 
